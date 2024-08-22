@@ -26,7 +26,9 @@ fn int main(String[] args)
 
 	io::printf("P3 \n %d %d\n255\n", IMAGE_WIDTH, IMAGE_HEIGHT);
 
-	for (int j = IMAGE_HEIGHT; j > 0 ; j -= 1) {
+	for (int j = IMAGE_HEIGHT -1 ; j >= 0 ; j -= 1) {
+		io::eprintf("\rScanlines remaining: %d ", j);
+
 		for (int i = 0; i < IMAGE_WIDTH; i += 1) {
 			double r = (double)i / (double)(IMAGE_WIDTH - 1);
 			double g = (double)j / (double)(IMAGE_HEIGHT - 1);
@@ -40,6 +42,8 @@ fn int main(String[] args)
 			
 		}
 	}
+
+	io::eprintn("\nDone.");
 
 	// const short MY_IMMUT_VAL = 3;
 	// io::printn(MY_IMMUT_VAL);
