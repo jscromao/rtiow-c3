@@ -12,3 +12,18 @@ const DOUBLE_INFINITY = double.inf;
 fn double degrees_to_radians(double degrees) {
     return degrees * math::PI / 180.0;
 }
+
+fn double random_double() {
+    return (double) math::random::rand(100) / 100.0;
+}
+
+fn double random_double_range(double min, double max) {
+    // Return a random real in [min, max)
+    return min + (max - min) * random_double();
+}
+
+fn double clamp(double x, double min, double max) {
+    if (x < min) return min;
+    if (x > max) return max;
+    return x;
+}

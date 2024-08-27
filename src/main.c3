@@ -9,6 +9,7 @@ import modules::common;
 import modules::hittable;
 import modules::hittable_list;
 import modules::sphere;
+import modules::camera;
 import std::core::dstring;
 import std::core::cinterop;
 //import std::core::dstring;
@@ -82,6 +83,7 @@ fn int main(String[] args) {
 	const double ASPECT_RATIO = 16.0 / 9.0;
 	const IMAGE_WIDTH = 400i32;
 	const int IMAGE_HEIGHT = (int)((double)IMAGE_WIDTH / ASPECT_RATIO);
+	const SAMPLES_PER_PIXEL = 100i32;
 
 	// World
 	HittableList world = HittableList.new();
@@ -94,16 +96,17 @@ fn int main(String[] args) {
 	//Hittable hit_world = &world;
 
 	// Camera
-	double viewport_height = 2.0;
-	double viewport_width = ASPECT_RATIO * viewport_height;
-	double focal_length = 1.0;
+	// double viewport_height = 2.0;
+	// double viewport_width = ASPECT_RATIO * viewport_height;
+	// double focal_length = 1.0;
 
-	Point3 origin = Point3{0.0, 0.0, 0.0};
-	Vec3 horizontal = Vec3{viewport_width, 0.0, 0.0};
-	Vec3 vertical = Vec3{0.0, viewport_height, 0.0};
-	Vec3 half_horizontal = horizontal.div_scalar(2.0);
-	Vec3 half_vertical = vertical.div_scalar(2.0);
-	Vec3 lower_left_corner = origin.sub_vec(half_horizontal).sub_vec(half_vertical).sub_vec(Vec3{0.0, 0.0, focal_length});
+	// Point3 origin = Point3{0.0, 0.0, 0.0};
+	// Vec3 horizontal = Vec3{viewport_width, 0.0, 0.0};
+	// Vec3 vertical = Vec3{0.0, viewport_height, 0.0};
+	// Vec3 half_horizontal = horizontal.div_scalar(2.0);
+	// Vec3 half_vertical = vertical.div_scalar(2.0);
+	// Vec3 lower_left_corner = origin.sub_vec(half_horizontal).sub_vec(half_vertical).sub_vec(Vec3{0.0, 0.0, focal_length});
+	Camera cam = Camera.new();
 
 	// Render
 
@@ -115,18 +118,28 @@ fn int main(String[] args) {
 
 		for (int i = 0; i < IMAGE_WIDTH; i += 1)
 		{
+			Color pixel_color;
+
+			for (int h = 0; h < SAMPLES_PER_PIXEL; h += 1) {
+				double u = ((double)i + common::random_double()) / (double)(IMAGE_WIDTH - 1);
+				double v = ((double)j + common::random_double()) / (double)(IMAGE_HEIGHT - 1);
+				Ray r = cam.get_ray(u, v);
+				pixel_color = pixel_color.add_vec(ray_color(&r, &world));
+			}
+			color::write_color(pixel_color, SAMPLES_PER_PIXEL);
+
 			// double r = (double)i / (IMAGE_WIDTH - 1);
 			// double g = (double)j / (IMAGE_HEIGHT - 1);
 			// double b = 0.25;
 			// color::write_color(Color{r, g, b});
 
-			double u = (double)i / (double)(IMAGE_WIDTH - 1);
-			double v = (double)j / (double)(IMAGE_HEIGHT - 1);
-			Vec3 our_dir = lower_left_corner.add_vec(horizontal.mul_scalar(u)).add_vec(vertical.mul_scalar(v)).sub_vec(origin);
-			Ray r = Ray.new(.origin = origin, .direction = our_dir);
-			//Color pixel_color = ray_color(&r, hit_world);
-			Color pixel_color = ray_color(&r, &world);
-			color::write_color(pixel_color);
+			// double u = (double)i / (double)(IMAGE_WIDTH - 1);
+			// double v = (double)j / (double)(IMAGE_HEIGHT - 1);
+			// Vec3 our_dir = lower_left_corner.add_vec(horizontal.mul_scalar(u)).add_vec(vertical.mul_scalar(v)).sub_vec(origin);
+			// Ray r = Ray.new(.origin = origin, .direction = our_dir);
+			// //Color pixel_color = ray_color(&r, hit_world);
+			// Color pixel_color = ray_color(&r, &world);
+			// color::write_color(pixel_color);
 		}
 	}
 
