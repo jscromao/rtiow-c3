@@ -1,9 +1,14 @@
 module rtiow_c3;
 import std::io;
+//import std::math;
 import modules::vec3;
 import modules::color;
 import modules::point3;
 import modules::ray;
+import modules::common;
+import modules::hittable;
+import modules::hittable_list;
+import modules::sphere;
 import std::core::dstring;
 import std::core::cinterop;
 //import std::core::dstring;
@@ -27,19 +32,42 @@ def T_f32 = float;
 def T_f64 = double;
 */
 
-fn bool hit_sphere(Point3 center, double radius, Ray* r) {
+
+// fn double hit_sphere(Point3 center, double radius, Ray* r) {
+// 	Vec3 r_dir = r.direction();
+// 	Vec3 oc = r.origin().sub_vec(center);
+// 	double a = r_dir.dot(r_dir);
+// 	double b = 2.0 * oc.dot(r_dir);
+// 	double c = oc.dot(oc) - radius * radius;
+// 	double discriminant = b * b - 4.0 * a * c;
+// 	//return discriminant >= 0.0;
+	
+// 	return (discriminant < 0.0) ? -1.0 : (-b - common::sqrt(discriminant))/(2.0*a);
+// }
+
+fn double hit_sphere(Point3 center, double radius, Ray* r) {
 	Vec3 r_dir = r.direction();
 	Vec3 oc = r.origin().sub_vec(center);
-	double a = r_dir.dot(r_dir);
-	double b = 2.0 * oc.dot(r_dir);
-	double c = oc.dot(oc) - radius * radius;
-	double discriminant = b * b - 4.0 * a * c;
-	return discriminant >= 0.0;
+	double a = r_dir.length_squared();
+	double half_b = oc.dot(r_dir);
+	double c = oc.length_squared() - radius * radius;
+	double discriminant = half_b * half_b - a * c;
+	return (discriminant < 0.0) ? -1.0 : (-half_b - common::sqrt(discriminant))/a;
 }
 
-fn Color ray_color(Ray* r) {
-	if (hit_sphere(Point3{0.0, 0.0, -1.0}, 0.5, r)) {
-		return Color{1.0, 0.0, 0.0};
+fn Color ray_color(Ray* r, Hittable world) {
+	// if (hit_sphere(Point3{0.0, 0.0, -1.0}, 0.5, r)) {
+	// 	return Color{1.0, 0.0, 0.0};
+	// }
+	// double t_hit = hit_sphere(Point3{0.0, 0.0, -1.0}, 0.5, r);
+	// if (t_hit > 0.0) {
+	// 	Vec3 n = r.at(t_hit).sub_vec(Vec3{0.0, 0.0, -1.0}).unit_vector();
+	// 	return (Color)(Color{n.x + 1.0, n.y + 1.0, n.z + 1.0}.mul_scalar(0.5));
+	// }
+
+	HitRecord rec;
+	if (world.hit(r, 0.0, double.inf, &rec)) {
+		return rec.normal.add_vec(Color{1.0, 1.0, 1.0}).mul_scalar(0.5);
 	}
 
 	Vec3 r_dir = r.direction();
@@ -54,6 +82,16 @@ fn int main(String[] args) {
 	const double ASPECT_RATIO = 16.0 / 9.0;
 	const IMAGE_WIDTH = 400i32;
 	const int IMAGE_HEIGHT = (int)((double)IMAGE_WIDTH / ASPECT_RATIO);
+
+	// World
+	HittableList world = HittableList.new();
+	
+	Sphere sph1 = Sphere{.center = Point3{0.0, 0.0, -1.0}, .radius = 0.5};
+	Sphere sph2 = Sphere{.center = Point3{0.0, -100.5, -1.0}, .radius = 100.0};
+	world.add(&sph1);
+	world.add(&sph2);
+
+	//Hittable hit_world = &world;
 
 	// Camera
 	double viewport_height = 2.0;
@@ -86,7 +124,8 @@ fn int main(String[] args) {
 			double v = (double)j / (double)(IMAGE_HEIGHT - 1);
 			Vec3 our_dir = lower_left_corner.add_vec(horizontal.mul_scalar(u)).add_vec(vertical.mul_scalar(v)).sub_vec(origin);
 			Ray r = Ray.new(.origin = origin, .direction = our_dir);
-			Color pixel_color = ray_color(&r);
+			//Color pixel_color = ray_color(&r, hit_world);
+			Color pixel_color = ray_color(&r, &world);
 			color::write_color(pixel_color);
 		}
 	}
