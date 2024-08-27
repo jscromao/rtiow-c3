@@ -2,6 +2,8 @@ module rtiow_c3;
 import std::io;
 import modules::vec3;
 import modules::color;
+import modules::point3;
+import modules::ray;
 import std::core::dstring;
 import std::core::cinterop;
 //import std::core::dstring;
@@ -25,10 +27,33 @@ def T_f32 = float;
 def T_f64 = double;
 */
 
+fn Color ray_color(Ray* r) {
+	Vec3 dir = r.direction();
+	Vec3 unit_direction = dir.unit_vector();
+	double t = 0.5 * (unit_direction.y + 1.0);
+	return Color{1.0, 1.0, 1.0}.mul_scalar(1.0 - t).add_vec(Color{0.5, 0.7, 1.0}.mul_scalar(t));
+}
+
 
 fn int main(String[] args) {
-	const IMAGE_WIDTH = 256i32;
-	const int IMAGE_HEIGHT = 256;
+	// Image
+	const double ASPECT_RATIO = 16.0 / 9.0;
+	const IMAGE_WIDTH = 400i32;
+	const int IMAGE_HEIGHT = (int)((double)IMAGE_WIDTH / ASPECT_RATIO);
+
+	// Camera
+	double viewport_height = 2.0;
+	double viewport_width = ASPECT_RATIO * viewport_height;
+	double focal_length = 1.0;
+
+	Point3 origin = Point3{0.0, 0.0, 0.0};
+	Vec3 horizontal = Vec3{viewport_width, 0.0, 0.0};
+	Vec3 vertical = Vec3{0.0, viewport_height, 0.0};
+	Vec3 half_horizontal = horizontal.div_scalar(2.0);
+	Vec3 half_vertical = vertical.div_scalar(2.0);
+	Vec3 lower_left_corner = origin.sub_vec(half_horizontal).sub_vec(half_vertical).sub_vec(Vec3{0.0, 0.0, focal_length});
+
+	// Render
 
 	io::printf("P3 \n %d %d\n255\n", IMAGE_WIDTH, IMAGE_HEIGHT);
 
@@ -38,16 +63,17 @@ fn int main(String[] args) {
 
 		for (int i = 0; i < IMAGE_WIDTH; i += 1)
 		{
-			double r = (double)i / (IMAGE_WIDTH - 1);
-			double g = (double)j / (IMAGE_HEIGHT - 1);
-			double b = 0.25;
+			// double r = (double)i / (IMAGE_WIDTH - 1);
+			// double g = (double)j / (IMAGE_HEIGHT - 1);
+			// double b = 0.25;
+			// color::write_color(Color{r, g, b});
 
-			// int ir = (int)(255.999 * r);
-			// int ig = (int)(255.999 * g);
-			// int ib = (int)(255.999 * b);
-
-			// io::printfn("%d %d %d", ir, ig, ib);
-			color::write_color(Color{r, g, b});
+			double u = (double)i / (double)(IMAGE_WIDTH - 1);
+			double v = (double)j / (double)(IMAGE_HEIGHT - 1);
+			Vec3 our_dir = lower_left_corner.add_vec(horizontal.mul_scalar(u)).add_vec(vertical.mul_scalar(v)).sub_vec(origin);
+			Ray r = Ray.new(.origin = origin, .direction = our_dir);
+			Color pixel_color = ray_color(&r);
+			color::write_color(pixel_color);
 		}
 	}
 
