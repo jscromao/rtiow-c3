@@ -27,9 +27,23 @@ def T_f32 = float;
 def T_f64 = double;
 */
 
+fn bool hit_sphere(Point3 center, double radius, Ray* r) {
+	Vec3 r_dir = r.direction();
+	Vec3 oc = r.origin().sub_vec(center);
+	double a = r_dir.dot(r_dir);
+	double b = 2.0 * oc.dot(r_dir);
+	double c = oc.dot(oc) - radius * radius;
+	double discriminant = b * b - 4.0 * a * c;
+	return discriminant >= 0.0;
+}
+
 fn Color ray_color(Ray* r) {
-	Vec3 dir = r.direction();
-	Vec3 unit_direction = dir.unit_vector();
+	if (hit_sphere(Point3{0.0, 0.0, -1.0}, 0.5, r)) {
+		return Color{1.0, 0.0, 0.0};
+	}
+
+	Vec3 r_dir = r.direction();
+	Vec3 unit_direction = r_dir.unit_vector();
 	double t = 0.5 * (unit_direction.y + 1.0);
 	return Color{1.0, 1.0, 1.0}.mul_scalar(1.0 - t).add_vec(Color{0.5, 0.7, 1.0}.mul_scalar(t));
 }
