@@ -1,6 +1,7 @@
 module rtiow_c3;
 import std::io;
 import modules::vec3;
+import modules::color;
 import std::core::dstring;
 import std::core::cinterop;
 //import std::core::dstring;
@@ -41,12 +42,12 @@ fn int main(String[] args) {
 			double g = (double)j / (IMAGE_HEIGHT - 1);
 			double b = 0.25;
 
-			int ir = (int)(255.999 * r);
-			int ig = (int)(255.999 * g);
-			int ib = (int)(255.999 * b);
+			// int ir = (int)(255.999 * r);
+			// int ig = (int)(255.999 * g);
+			// int ib = (int)(255.999 * b);
 
-			io::printfn("%d %d %d", ir, ig, ib);
-			
+			// io::printfn("%d %d %d", ir, ig, ib);
+			color::write_color(Color{r, g, b});
 		}
 	}
 
