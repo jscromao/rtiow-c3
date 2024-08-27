@@ -56,7 +56,7 @@ fn double hit_sphere(Point3 center, double radius, Ray* r) {
 	return (discriminant < 0.0) ? -1.0 : (-half_b - common::sqrt(discriminant))/a;
 }
 
-fn Color ray_color(Ray* r, Hittable world) {
+fn Color ray_color(Ray* r, Hittable world, int depth) {
 	// if (hit_sphere(Point3{0.0, 0.0, -1.0}, 0.5, r)) {
 	// 	return Color{1.0, 0.0, 0.0};
 	// }
@@ -66,9 +66,15 @@ fn Color ray_color(Ray* r, Hittable world) {
 	// 	return (Color)(Color{n.x + 1.0, n.y + 1.0, n.z + 1.0}.mul_scalar(0.5));
 	// }
 
+	if (depth <= 0) return Color{0.0, 0.0, 0.0};
+
 	HitRecord rec;
-	if (world.hit(r, 0.0, double.inf, &rec)) {
-		return rec.normal.add_vec(Color{1.0, 1.0, 1.0}).mul_scalar(0.5);
+	if (world.hit(r, 0.001, double.inf, &rec)) {
+		//return rec.normal.add_vec(Color{1.0, 1.0, 1.0}).mul_scalar(0.5);
+		Vec3 direction = rec.normal.add_vec(Vec3.random_in_unit_sphere());
+		//Vec3 direction = rec.normal.add_vec(Vec3.random_unit_vector());
+		Ray new_r = Ray.new(.origin = rec.p, .direction = direction);
+		return ray_color(&new_r, world, depth - 1).mul_scalar(0.5);
 	}
 
 	Vec3 r_dir = r.direction();
@@ -84,6 +90,7 @@ fn int main(String[] args) {
 	const IMAGE_WIDTH = 400i32;
 	const int IMAGE_HEIGHT = (int)((double)IMAGE_WIDTH / ASPECT_RATIO);
 	const SAMPLES_PER_PIXEL = 100i32;
+	const int MAX_DEPTH = 50;
 
 	// World
 	HittableList world = HittableList.new();
@@ -124,7 +131,7 @@ fn int main(String[] args) {
 				double u = ((double)i + common::random_double()) / (double)(IMAGE_WIDTH - 1);
 				double v = ((double)j + common::random_double()) / (double)(IMAGE_HEIGHT - 1);
 				Ray r = cam.get_ray(u, v);
-				pixel_color = pixel_color.add_vec(ray_color(&r, &world));
+				pixel_color = pixel_color.add_vec(ray_color(&r, &world, MAX_DEPTH));
 			}
 			color::write_color(pixel_color, SAMPLES_PER_PIXEL);
 

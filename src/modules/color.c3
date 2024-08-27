@@ -16,7 +16,12 @@ def Color = Vec3;
 fn void write_color(Color pixel_color, int samples_per_pixel) {
     // Divide the color by the number of samples
     double scale = 1.0 / (double) samples_per_pixel;
-    Color scaled_color = pixel_color.mul_scalar(scale);
+    Color multed_color = pixel_color.mul_scalar(scale);
+    Color scaled_color = Color{
+        common::sqrt_double(multed_color.x),
+        common::sqrt_double(multed_color.y),
+        common::sqrt_double(multed_color.z)
+    };
 
     int r = (int)(256.0 * common::clamp(scaled_color.x, 0.0, 0.999));
     int g = (int)(256.0 * common::clamp(scaled_color.y, 0.0, 0.999));

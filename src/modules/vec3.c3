@@ -1,5 +1,6 @@
 module modules::vec3;
 import std::math;
+import modules::common;
 
 union Vec3
 {
@@ -17,6 +18,32 @@ fn Vec3 Vec3.new(Vec3* self = null, double x, double y, double z)
 fn Vec3 new(double x, double y, double z) {
 	//return Vec3{ .e={x, y, z} };
 	return Vec3.new(.x=x, .y=y, .z=z);
+}
+
+fn Vec3 Vec3.random(Vec3* self = null) {
+	return Vec3{common::random_double(), common::random_double(), common::random_double()};
+}
+
+fn Vec3 Vec3.random_range(Vec3* self = null, double min, double max) {
+	return Vec3{
+		common::random_double_range(min, max),
+		common::random_double_range(min, max),
+		common::random_double_range(min, max)
+	};
+}
+
+fn Vec3 Vec3.random_in_unit_sphere(Vec3* self = null) {
+	while (true) {
+		Vec3 p = Vec3.random_range(.min = -1.0, .max = 1.0);
+		if (p.length_squared() >= 1.0) {
+			continue;
+		}
+		return p;
+	}
+}
+
+fn Vec3 Vec3.random_unit_vector(Vec3* self = null) {
+	return Vec3.random_in_unit_sphere(self).unit_vector();
 }
 
 fn String Vec3.to_string(&self) {
