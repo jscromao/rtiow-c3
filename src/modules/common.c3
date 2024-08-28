@@ -8,6 +8,7 @@ fn double sqrt(double value) {
 
 def MY_PI = math::PI;
 const DOUBLE_INFINITY = double.inf;
+const double EPS = math::DOUBLE_EPSILON;
 
 fn double sqrt_double(double value) {
     return math::sqrt(value);
@@ -30,4 +31,8 @@ fn double clamp(double x, double min, double max) {
     if (x < min) return min;
     if (x > max) return max;
     return x;
+}
+
+fn double abs(double val) {
+    return (double) math::abs(val);
 }

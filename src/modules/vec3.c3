@@ -46,6 +46,18 @@ fn Vec3 Vec3.random_unit_vector(Vec3* self = null) {
 	return Vec3.random_in_unit_sphere(self).unit_vector();
 }
 
+fn Vec3 Vec3.reflect(&self, Vec3 n) {
+	double dp = self.dot(n);
+	return self.sub_vec(n.mul_scalar(2.0 * dp));
+}
+
+fn bool Vec3.near_zero(&self) {
+	//const double EPS = 1.0e-8;
+	double eps = common::EPS;
+	// Return true if the vec is close to zero in all dimensions
+	return (common::abs(self.x) < eps) && (common::abs(self.y) < eps) && (common::abs(self.z) < eps);
+}
+
 fn String Vec3.to_string(&self) {
 	DString out;
 	out.appendfn("Vec3 {\n  x: %f,\n  y: %f,\n  z: %f\n}", self.e[0], self.e[1], self.e[2]);

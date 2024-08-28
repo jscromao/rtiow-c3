@@ -8,10 +8,12 @@ import modules::ray;
 import modules::common;
 import modules::hittable;
 import modules::hittable_list;
+import modules::material;
 import modules::sphere;
 import modules::camera;
 import std::core::dstring;
 import std::core::cinterop;
+import std::collections::maybe;
 //import std::core::dstring;
 
 /*
@@ -42,19 +44,18 @@ def T_f64 = double;
 // 	double c = oc.dot(oc) - radius * radius;
 // 	double discriminant = b * b - 4.0 * a * c;
 // 	//return discriminant >= 0.0;
-	
 // 	return (discriminant < 0.0) ? -1.0 : (-b - common::sqrt(discriminant))/(2.0*a);
 // }
 
-fn double hit_sphere(Point3 center, double radius, Ray* r) {
-	Vec3 r_dir = r.direction();
-	Vec3 oc = r.origin().sub_vec(center);
-	double a = r_dir.length_squared();
-	double half_b = oc.dot(r_dir);
-	double c = oc.length_squared() - radius * radius;
-	double discriminant = half_b * half_b - a * c;
-	return (discriminant < 0.0) ? -1.0 : (-half_b - common::sqrt(discriminant))/a;
-}
+// fn double hit_sphere(Point3 center, double radius, Ray* r) {
+// 	Vec3 r_dir = r.direction();
+// 	Vec3 oc = r.origin().sub_vec(center);
+// 	double a = r_dir.length_squared();
+// 	double half_b = oc.dot(r_dir);
+// 	double c = oc.length_squared() - radius * radius;
+// 	double discriminant = half_b * half_b - a * c;
+// 	return (discriminant < 0.0) ? -1.0 : (-half_b - common::sqrt(discriminant))/a;
+// }
 
 fn Color ray_color(Ray* r, Hittable world, int depth) {
 	// if (hit_sphere(Point3{0.0, 0.0, -1.0}, 0.5, r)) {
@@ -70,11 +71,21 @@ fn Color ray_color(Ray* r, Hittable world, int depth) {
 
 	HitRecord rec;
 	if (world.hit(r, 0.001, double.inf, &rec)) {
-		//return rec.normal.add_vec(Color{1.0, 1.0, 1.0}).mul_scalar(0.5);
-		Vec3 direction = rec.normal.add_vec(Vec3.random_in_unit_sphere());
-		//Vec3 direction = rec.normal.add_vec(Vec3.random_unit_vector());
-		Ray new_r = Ray.new(.origin = rec.p, .direction = direction);
-		return ray_color(&new_r, world, depth - 1).mul_scalar(0.5);
+		// //return rec.normal.add_vec(Color{1.0, 1.0, 1.0}).mul_scalar(0.5);
+		// Vec3 direction = rec.normal.add_vec(Vec3.random_in_unit_sphere());
+		// //Vec3 direction = rec.normal.add_vec(Vec3.random_unit_vector());
+		// Ray new_r = Ray.new(.origin = rec.p, .direction = direction);
+		// return ray_color(&new_r, world, depth - 1).mul_scalar(0.5);
+
+		Color attenuation = Color{0.0, 0.0, 0.0};
+		Ray scattered = Ray.new(.origin=Point3{0.0, 0.0, 0.0}, .direction=Vec3{0.0, 0.0, 0.0});
+
+		if (try mat = rec.material()) {
+			if (mat.scatter(r, &rec, &attenuation, &scattered)) {
+				return attenuation.mul_vec(ray_color(&scattered, world, depth -1));
+			}
+		}
+		return Color{0.0, 0.0, 0.0};
 	}
 
 	Vec3 r_dir = r.direction();
@@ -83,6 +94,30 @@ fn Color ray_color(Ray* r, Hittable world, int depth) {
 	return Color{1.0, 1.0, 1.0}.mul_scalar(1.0 - t).add_vec(Color{0.5, 0.7, 1.0}.mul_scalar(t));
 }
 
+
+fn int testing_maybe(String[] args) {
+	//Maybe(<int>) my_test = maybe::value(<int>)(5);
+	//Maybe(<int>) my_test;
+	//my_test = maybe::value(5i32);
+	int! my_test = maybe::value(<int>)(5).get();
+
+	// if(try val = my_test.get()) {
+	// 	io::printfn("I had %d", val);
+	// } else {
+	// 	io::printfn("I BUGGY");
+	// }
+	//int! val = my_test.get();
+	int! val = my_test;
+	if(catch val) {
+		io::printfn("I BUGGY");
+		return -1;
+	}
+
+	io::printfn("I had %d", val);
+	
+	
+	return 0;
+}
 
 fn int main(String[] args) {
 	// Image
@@ -94,11 +129,20 @@ fn int main(String[] args) {
 
 	// World
 	HittableList world = HittableList.new();
+
+	Lambertian mat_ground = Lambertian{.albedo = Color{0.8, 0.8, 0.0}};
+	Lambertian mat_center = Lambertian{.albedo = Color{0.7, 0.3, 0.3}};
+	Metal mat_left = Metal{.albedo = Color{0.8, 0.8, 0.8}, .fuzz = 0.15};
+	Metal mat_right = Metal{.albedo = Color{0.8, 0.6, 0.2}, .fuzz = 0.4};
 	
-	Sphere sph1 = Sphere{.center = Point3{0.0, 0.0, -1.0}, .radius = 0.5};
-	Sphere sph2 = Sphere{.center = Point3{0.0, -100.5, -1.0}, .radius = 100.0};
+	Sphere sph0 = Sphere{.center = Point3{0.0, -100.5, -1.0}, .radius = 100.0, .mat=&mat_ground};
+	Sphere sph1 = Sphere{.center = Point3{0.0, 0.0, -1.0}, .radius = 0.5, .mat=&mat_center};
+	Sphere sph2 = Sphere{.center = Point3{-1.0, 0.0, -1.0}, .radius = 0.5, .mat=&mat_left};
+	Sphere sph3 = Sphere{.center = Point3{1.0, 0.0, -1.0}, .radius = 0.5, .mat=&mat_right};
+	world.add(&sph0);
 	world.add(&sph1);
 	world.add(&sph2);
+	world.add(&sph3);
 
 	//Hittable hit_world = &world;
 

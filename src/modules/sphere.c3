@@ -5,14 +5,21 @@ import modules::point3;
 import modules::hittable;
 import modules::common;
 import modules::ray;
+import modules::material;
+import std::collections::maybe;
 
 struct Sphere (Hittable) {
     Point3 center;
     double radius;
+    Material mat;
 }
 
-fn Sphere Sphere.new(Sphere* self = null, Point3 cen, double r) {
-    return Sphere{.center = cen, .radius = r};
+fn Sphere Sphere.new(Sphere* self = null, Point3 cen, double r, Material m) {
+    return Sphere{.center = cen, .radius = r, .mat = m};
+}
+
+fn Material Sphere.material(&self) {
+    return self.mat;
 }
 
 fn bool Sphere.hit(Sphere* self, Ray* r, double t_min, double t_max, HitRecord* rec) @dynamic {
@@ -42,5 +49,6 @@ fn bool Sphere.hit(Sphere* self, Ray* r, double t_min, double t_max, HitRecord* 
     //rec.normal = rec.p.sub_vec(self.center).div_scalar(self.radius);
     Vec3 outward_normal = rec.p.sub_vec(self.center).div_scalar(self.radius);
     rec.set_face_normal(r, outward_normal);
+    rec.mat = maybe::value(<Material>)(self.material());
     return true;
 }
