@@ -155,7 +155,7 @@ fn HittableList gen_world() {
 fn int main(String[] args) {
 	// Image
 	const double ASPECT_RATIO = 3.0 / 2.0;
-	const IMAGE_WIDTH = 400i32;
+	const IMAGE_WIDTH = 1200i32;
 	const int IMAGE_HEIGHT = (int)((double)IMAGE_WIDTH / ASPECT_RATIO);
 	const SAMPLES_PER_PIXEL = 500i32;
 	const int MAX_DEPTH = 50;
