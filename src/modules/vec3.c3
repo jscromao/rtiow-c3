@@ -51,6 +51,15 @@ fn Vec3 Vec3.reflect(&self, Vec3 n) {
 	return self.sub_vec(n.mul_scalar(2.0 * dp));
 }
 
+fn Vec3 Vec3.refract(&self, Vec3 n, double etai_over_etat) {
+	double dp = self.mul_scalar(-1.0).dot(n);
+	double cos_theta = (dp < 1.0) ? dp : 1.0;
+	Vec3 r_out_perpendicular = self.add_vec(n.mul_scalar(cos_theta)).mul_scalar(etai_over_etat);
+	double calcs = -1.0 * common::sqrt_double(common::abs(1.0 - r_out_perpendicular.length_squared()));
+	Vec3 r_out_parallel = n.mul_scalar(calcs);
+	return r_out_perpendicular.add_vec(r_out_parallel);
+}
+
 fn bool Vec3.near_zero(&self) {
 	//const double EPS = 1.0e-8;
 	double eps = common::EPS;

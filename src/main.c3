@@ -131,8 +131,8 @@ fn int main(String[] args) {
 	HittableList world = HittableList.new();
 
 	Lambertian mat_ground = Lambertian{.albedo = Color{0.8, 0.8, 0.0}};
-	Lambertian mat_center = Lambertian{.albedo = Color{0.7, 0.3, 0.3}};
-	Metal mat_left = Metal{.albedo = Color{0.8, 0.8, 0.8}, .fuzz = 0.15};
+	Lambertian mat_center = Lambertian{.albedo = Color{0.1, 0.2, 0.5}};
+	Dielectric mat_left = Dielectric{.ir=1.5};
 	Metal mat_right = Metal{.albedo = Color{0.8, 0.6, 0.2}, .fuzz = 0.4};
 	
 	Sphere sph0 = Sphere{.center = Point3{0.0, -100.5, -1.0}, .radius = 100.0, .mat=&mat_ground};
@@ -143,6 +143,8 @@ fn int main(String[] args) {
 	world.add(&sph1);
 	world.add(&sph2);
 	world.add(&sph3);
+	Sphere sph_hollow = Sphere{.center = Point3{-1.0, 0.0, -1.0}, .radius = -0.4, .mat=&mat_left};
+	world.add(&sph_hollow);
 
 	//Hittable hit_world = &world;
 

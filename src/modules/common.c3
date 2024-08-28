@@ -2,6 +2,10 @@ module modules::common;
 
 import std::math;
 
+fn double pow(double value, uint exp) {
+    return math::pow(value, exp);
+}
+
 fn double sqrt(double value) {
     return math::sqrt(value);
 }
