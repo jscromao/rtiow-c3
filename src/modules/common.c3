@@ -2,6 +2,10 @@ module modules::common;
 
 import std::math;
 
+fn double tan(double value) {
+    return (double) math::tan(value);
+}
+
 fn double pow(double value, uint exp) {
     return math::pow(value, exp);
 }

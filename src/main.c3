@@ -57,6 +57,8 @@ def T_f64 = double;
 // 	return (discriminant < 0.0) ? -1.0 : (-half_b - common::sqrt(discriminant))/a;
 // }
 
+const double ASPECT_RATIO = 16.0 / 9.0;
+
 fn Color ray_color(Ray* r, Hittable world, int depth) {
 	// if (hit_sphere(Point3{0.0, 0.0, -1.0}, 0.5, r)) {
 	// 	return Color{1.0, 0.0, 0.0};
@@ -133,18 +135,20 @@ fn int main(String[] args) {
 	Lambertian mat_ground = Lambertian{.albedo = Color{0.8, 0.8, 0.0}};
 	Lambertian mat_center = Lambertian{.albedo = Color{0.1, 0.2, 0.5}};
 	Dielectric mat_left = Dielectric{.ir=1.5};
-	Metal mat_right = Metal{.albedo = Color{0.8, 0.6, 0.2}, .fuzz = 0.4};
+	Metal mat_right = Metal{.albedo = Color{0.8, 0.6, 0.2}, .fuzz = 0.0};
 	
 	Sphere sph0 = Sphere{.center = Point3{0.0, -100.5, -1.0}, .radius = 100.0, .mat=&mat_ground};
 	Sphere sph1 = Sphere{.center = Point3{0.0, 0.0, -1.0}, .radius = 0.5, .mat=&mat_center};
 	Sphere sph2 = Sphere{.center = Point3{-1.0, 0.0, -1.0}, .radius = 0.5, .mat=&mat_left};
-	Sphere sph3 = Sphere{.center = Point3{1.0, 0.0, -1.0}, .radius = 0.5, .mat=&mat_right};
+	Sphere sph3 = Sphere{.center = Point3{-1.0, 0.0, -1.0}, .radius = -0.45, .mat=&mat_left};
+	Sphere sph4 = Sphere{.center = Point3{1.0, 0.0, -1.0}, .radius = 0.5, .mat=&mat_right};
 	world.add(&sph0);
 	world.add(&sph1);
 	world.add(&sph2);
 	world.add(&sph3);
-	Sphere sph_hollow = Sphere{.center = Point3{-1.0, 0.0, -1.0}, .radius = -0.4, .mat=&mat_left};
-	world.add(&sph_hollow);
+	world.add(&sph4);
+	// Sphere sph_hollow = Sphere{.center = Point3{-1.0, 0.0, -1.0}, .radius = -0.4, .mat=&mat_left};
+	// world.add(&sph_hollow);
 
 	//Hittable hit_world = &world;
 
@@ -159,7 +163,13 @@ fn int main(String[] args) {
 	// Vec3 half_horizontal = horizontal.div_scalar(2.0);
 	// Vec3 half_vertical = vertical.div_scalar(2.0);
 	// Vec3 lower_left_corner = origin.sub_vec(half_horizontal).sub_vec(half_vertical).sub_vec(Vec3{0.0, 0.0, focal_length});
-	Camera cam = Camera.new();
+	Camera cam = Camera.new(
+		.look_from=Point3{-2.0, 2.0, 1.0},
+		.look_at=Point3{0.0, 0.0, -1.0},
+		.v_up=Vec3{0.0, 1.0, 0.0},
+		.v_fov=20.0,
+		.aspect_ratio=ASPECT_RATIO
+	);
 
 	// Render
 
