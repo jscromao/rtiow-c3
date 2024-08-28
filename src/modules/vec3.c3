@@ -46,6 +46,20 @@ fn Vec3 Vec3.random_unit_vector(Vec3* self = null) {
 	return Vec3.random_in_unit_sphere(self).unit_vector();
 }
 
+fn Vec3 Vec3.random_in_unit_disk(Vec3* self = null) {
+	while (true) {
+		Vec3 p = Vec3{
+			common::random_double_range(-1.0, 1.0),
+			common::random_double_range(-1.0, 1.0),
+			0.0
+		};
+		if (p.length_squared() >= 1.0) {
+			continue;
+		}
+		return p;
+	}
+}
+
 fn Vec3 Vec3.reflect(&self, Vec3 n) {
 	double dp = self.dot(n);
 	return self.sub_vec(n.mul_scalar(2.0 * dp));

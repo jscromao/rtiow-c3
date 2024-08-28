@@ -163,12 +163,21 @@ fn int main(String[] args) {
 	// Vec3 half_horizontal = horizontal.div_scalar(2.0);
 	// Vec3 half_vertical = vertical.div_scalar(2.0);
 	// Vec3 lower_left_corner = origin.sub_vec(half_horizontal).sub_vec(half_vertical).sub_vec(Vec3{0.0, 0.0, focal_length});
+
+	Point3 look_from = Point3{3.0, 3.0, 2.0};
+	Point3 look_at = Point3{0.0, 0.0, -1.0};
+	Vec3 v_up = Vec3{0.0, 1.0, 0.0};
+	double dist_to_focus = look_from.sub_vec(look_at).length();
+	double aperture = 2.0;
+
 	Camera cam = Camera.new(
-		.look_from=Point3{-2.0, 2.0, 1.0},
-		.look_at=Point3{0.0, 0.0, -1.0},
-		.v_up=Vec3{0.0, 1.0, 0.0},
+		.look_from=look_from,
+		.look_at=look_at,
+		.v_up=v_up,
 		.v_fov=20.0,
-		.aspect_ratio=ASPECT_RATIO
+		.aspect_ratio=ASPECT_RATIO,
+		.aperture=aperture,
+		.focus_dist = dist_to_focus
 	);
 
 	// Render
