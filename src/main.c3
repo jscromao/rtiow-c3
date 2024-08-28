@@ -14,6 +14,7 @@ import modules::camera;
 import std::core::dstring;
 import std::core::cinterop;
 import std::collections::maybe;
+import std::core::mem;
 //import std::core::dstring;
 
 /*
@@ -35,50 +36,11 @@ def T_f32 = float;
 def T_f64 = double;
 */
 
-
-// fn double hit_sphere(Point3 center, double radius, Ray* r) {
-// 	Vec3 r_dir = r.direction();
-// 	Vec3 oc = r.origin().sub_vec(center);
-// 	double a = r_dir.dot(r_dir);
-// 	double b = 2.0 * oc.dot(r_dir);
-// 	double c = oc.dot(oc) - radius * radius;
-// 	double discriminant = b * b - 4.0 * a * c;
-// 	//return discriminant >= 0.0;
-// 	return (discriminant < 0.0) ? -1.0 : (-b - common::sqrt(discriminant))/(2.0*a);
-// }
-
-// fn double hit_sphere(Point3 center, double radius, Ray* r) {
-// 	Vec3 r_dir = r.direction();
-// 	Vec3 oc = r.origin().sub_vec(center);
-// 	double a = r_dir.length_squared();
-// 	double half_b = oc.dot(r_dir);
-// 	double c = oc.length_squared() - radius * radius;
-// 	double discriminant = half_b * half_b - a * c;
-// 	return (discriminant < 0.0) ? -1.0 : (-half_b - common::sqrt(discriminant))/a;
-// }
-
-const double ASPECT_RATIO = 16.0 / 9.0;
-
 fn Color ray_color(Ray* r, Hittable world, int depth) {
-	// if (hit_sphere(Point3{0.0, 0.0, -1.0}, 0.5, r)) {
-	// 	return Color{1.0, 0.0, 0.0};
-	// }
-	// double t_hit = hit_sphere(Point3{0.0, 0.0, -1.0}, 0.5, r);
-	// if (t_hit > 0.0) {
-	// 	Vec3 n = r.at(t_hit).sub_vec(Vec3{0.0, 0.0, -1.0}).unit_vector();
-	// 	return (Color)(Color{n.x + 1.0, n.y + 1.0, n.z + 1.0}.mul_scalar(0.5));
-	// }
-
 	if (depth <= 0) return Color{0.0, 0.0, 0.0};
 
 	HitRecord rec;
 	if (world.hit(r, 0.001, double.inf, &rec)) {
-		// //return rec.normal.add_vec(Color{1.0, 1.0, 1.0}).mul_scalar(0.5);
-		// Vec3 direction = rec.normal.add_vec(Vec3.random_in_unit_sphere());
-		// //Vec3 direction = rec.normal.add_vec(Vec3.random_unit_vector());
-		// Ray new_r = Ray.new(.origin = rec.p, .direction = direction);
-		// return ray_color(&new_r, world, depth - 1).mul_scalar(0.5);
-
 		Color attenuation = Color{0.0, 0.0, 0.0};
 		Ray scattered = Ray.new(.origin=Point3{0.0, 0.0, 0.0}, .direction=Vec3{0.0, 0.0, 0.0});
 
@@ -121,36 +83,106 @@ fn int testing_maybe(String[] args) {
 	return 0;
 }
 
+
+const usz MAX_COUNT = 500;
+Sphere[MAX_COUNT] all_spheres;
+Material[MAX_COUNT] all_mats;
+usz we_at = 0;
+
+fn Material gen_mat_lambertian(Color albedo) {
+	Lambertian* created = mem::new(Lambertian);
+	created.albedo = albedo;
+	return created;
+}
+fn Material gen_mat_metal(Color albedo, double fuzz) {
+	Metal* created = mem::new(Metal);
+	created.albedo = albedo;
+	created.fuzz = fuzz;
+	return created;
+}
+fn Material gen_mat_dielectric(double ir) {
+	Dielectric* created = mem::new(Dielectric);
+	created.ir=ir;
+	return created;
+}
+
+fn Hittable gen_hit_sphere(Point3 center, double radius, Material material) {
+    usz were_at = we_at;
+    we_at = we_at + 1;
+    all_mats[were_at] = material;
+	all_spheres[were_at] = Sphere{.center = center, .radius = radius, .mat=material};
+    return &(all_spheres[were_at]);
+}
+
+fn HittableList gen_world() {
+	HittableList world = HittableList.new();
+
+	world.add(gen_hit_sphere(Point3{0.0, -1000.0, 0.0}, 1000.0, gen_mat_lambertian(Color{0.5, 0.5, 0.5})));
+
+	//random loop gen
+	for (int a = -11; a < 11; a += 1) {
+		for (int b = -11; b < 11; b += 1) {
+			double choose_mat = common::random_double();
+			double center_x = (double)a + 0.9*common::random_double();
+			double center_z = (double)b + 0.9*common::random_double();
+			Point3 center = Point3{center_x, 0.2, center_z};
+
+			if (center.sub_vec(Point3{4.0, 0.2, 0.0}).length() > 0.9) {
+				if (choose_mat < 0.8) {
+					//Diffuse
+					Color albedo = Color.random().mul_vec(Color.random());
+					world.add(gen_hit_sphere(Point3{center_x, 0.2, center_z}, 0.2, gen_mat_lambertian(albedo)));
+				} else if (choose_mat < 0.95) {
+					//Metal
+					Color albedo = Color.random_range(.min=0.5, .max=1.0);
+					double fuzz = common::random_double_range(0.0, 0.5);
+					world.add(gen_hit_sphere(Point3{center_x, 0.2, center_z}, 0.2, gen_mat_metal(albedo, fuzz)));
+				} else {
+					//Glass
+					world.add(gen_hit_sphere(Point3{center_x, 0.2, center_z}, 0.2, gen_mat_dielectric(1.5)));
+				}
+			}
+		}
+	}
+
+	world.add(gen_hit_sphere(Point3{0.0, 1.0, 0.0}, 1.0, gen_mat_dielectric(1.5)));
+	world.add(gen_hit_sphere(Point3{-4.0, 1.0, 0.0}, 1.0, gen_mat_lambertian(Color{0.4, 0.2, 0.1})));
+	world.add(gen_hit_sphere(Point3{4.0, 1.0, 0.0}, 1.0, gen_mat_metal(Color{0.7, 0.6, 0.5}, 0.0)));
+
+	return world;
+}
+
 fn int main(String[] args) {
 	// Image
-	const double ASPECT_RATIO = 16.0 / 9.0;
+	const double ASPECT_RATIO = 3.0 / 2.0;
 	const IMAGE_WIDTH = 400i32;
 	const int IMAGE_HEIGHT = (int)((double)IMAGE_WIDTH / ASPECT_RATIO);
-	const SAMPLES_PER_PIXEL = 100i32;
+	const SAMPLES_PER_PIXEL = 500i32;
 	const int MAX_DEPTH = 50;
 
 	// World
-	HittableList world = HittableList.new();
+	// HittableList world = HittableList.new();
 
-	Lambertian mat_ground = Lambertian{.albedo = Color{0.8, 0.8, 0.0}};
-	Lambertian mat_center = Lambertian{.albedo = Color{0.1, 0.2, 0.5}};
-	Dielectric mat_left = Dielectric{.ir=1.5};
-	Metal mat_right = Metal{.albedo = Color{0.8, 0.6, 0.2}, .fuzz = 0.0};
+	// Lambertian mat_ground = Lambertian{.albedo = Color{0.8, 0.8, 0.0}};
+	// Lambertian mat_center = Lambertian{.albedo = Color{0.1, 0.2, 0.5}};
+	// Dielectric mat_left = Dielectric{.ir=1.5};
+	// Metal mat_right = Metal{.albedo = Color{0.8, 0.6, 0.2}, .fuzz = 0.0};
 	
-	Sphere sph0 = Sphere{.center = Point3{0.0, -100.5, -1.0}, .radius = 100.0, .mat=&mat_ground};
-	Sphere sph1 = Sphere{.center = Point3{0.0, 0.0, -1.0}, .radius = 0.5, .mat=&mat_center};
-	Sphere sph2 = Sphere{.center = Point3{-1.0, 0.0, -1.0}, .radius = 0.5, .mat=&mat_left};
-	Sphere sph3 = Sphere{.center = Point3{-1.0, 0.0, -1.0}, .radius = -0.45, .mat=&mat_left};
-	Sphere sph4 = Sphere{.center = Point3{1.0, 0.0, -1.0}, .radius = 0.5, .mat=&mat_right};
-	world.add(&sph0);
-	world.add(&sph1);
-	world.add(&sph2);
-	world.add(&sph3);
-	world.add(&sph4);
-	// Sphere sph_hollow = Sphere{.center = Point3{-1.0, 0.0, -1.0}, .radius = -0.4, .mat=&mat_left};
-	// world.add(&sph_hollow);
+	// Sphere sph0 = Sphere{.center = Point3{0.0, -100.5, -1.0}, .radius = 100.0, .mat=&mat_ground};
+	// Sphere sph1 = Sphere{.center = Point3{0.0, 0.0, -1.0}, .radius = 0.5, .mat=&mat_center};
+	// Sphere sph2 = Sphere{.center = Point3{-1.0, 0.0, -1.0}, .radius = 0.5, .mat=&mat_left};
+	// Sphere sph3 = Sphere{.center = Point3{-1.0, 0.0, -1.0}, .radius = -0.45, .mat=&mat_left};
+	// Sphere sph4 = Sphere{.center = Point3{1.0, 0.0, -1.0}, .radius = 0.5, .mat=&mat_right};
+	// world.add(&sph0);
+	// world.add(&sph1);
+	// world.add(&sph2);
+	// world.add(&sph3);
+	// world.add(&sph4);
+	// // Sphere sph_hollow = Sphere{.center = Point3{-1.0, 0.0, -1.0}, .radius = -0.4, .mat=&mat_left};
+	// // world.add(&sph_hollow);
 
-	//Hittable hit_world = &world;
+	// //Hittable hit_world = &world;
+	HittableList world = gen_world();
 
 	// Camera
 	// double viewport_height = 2.0;
@@ -164,11 +196,13 @@ fn int main(String[] args) {
 	// Vec3 half_vertical = vertical.div_scalar(2.0);
 	// Vec3 lower_left_corner = origin.sub_vec(half_horizontal).sub_vec(half_vertical).sub_vec(Vec3{0.0, 0.0, focal_length});
 
-	Point3 look_from = Point3{3.0, 3.0, 2.0};
-	Point3 look_at = Point3{0.0, 0.0, -1.0};
+	Point3 look_from = Point3{13.0, 2.0, 3.0};
+	Point3 look_at = Point3{0.0, 0.0, 0.0};
 	Vec3 v_up = Vec3{0.0, 1.0, 0.0};
-	double dist_to_focus = look_from.sub_vec(look_at).length();
-	double aperture = 2.0;
+	//double dist_to_focus = look_from.sub_vec(look_at).length();
+	//double aperture = 2.0;
+	double dist_to_focus = 10.0;
+	double aperture = 0.1;
 
 	Camera cam = Camera.new(
 		.look_from=look_from,
